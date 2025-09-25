@@ -95,14 +95,17 @@ export default function ItemCard({
         )}
 
         <span className="flex items-center gap-1">
-          Categoría: 
+          Categoría:
           <span className="inline-block bg-gray-200 text-gray-700 px-2 py-0.5 rounded font-semibold ml-1">
             {item.category}
           </span>
         </span>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-between">
+        <p className={`${item.expiryDate && (new Date(item.expiryDate) - new Date()) / (1000 * 60 * 60 * 24) <= 5 ? 'text-red-500 font-semibold' : 'text-gray-500 font-semibold'}`}>
+          {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('es-ES') : 'Sin fecha'}
+        </p>
         <button
           onClick={() => onDelete(item._id)}
           className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 text-xs flex items-center gap-1"
