@@ -14,11 +14,16 @@ export default function Sidebar({
   const allItemsCount = items.length;
 
   const soonExpiringCount = useMemo(() => {
-    const now = new Date();
-    const limit = new Date();
-    limit.setDate(now.getDate() + 30);
-    return items.filter(i => i.expiryDate && new Date(i.expiryDate) <= limit).length;
-  }, [items]);
+  const now = new Date();
+  const limit = new Date();
+  limit.setDate(now.getDate() + 30);
+
+  return items.filter(i => {
+    if (!i.expiryDate) return false;
+    const expiry = new Date(i.expiryDate);
+    return expiry >= now && expiry <= limit; // >= ahora para excluir caducados
+  }).length;
+}, [items]);
 
   return (
     <aside className="bg-gray-100 p-4 w-60 h-screen border-r border-gray-300 flex flex-col gap-6">
@@ -68,7 +73,9 @@ export default function Sidebar({
           </button>
           {filter === 'category' && (
             <div className="ml-6 mt-1 flex flex-col gap-1">
-              {categories.map(cat => (
+              {categories
+              .filter(cat => cat !== 'Caducados')
+              .map(cat => (
                 <button key={cat} onClick={() => setSubFilter(cat)} className="text-sm hover:text-green-500 text-left">{cat}</button>
               ))}
             </div>

@@ -6,24 +6,23 @@ import ShoppingItemCard from '../components/ShoppingItemCard.jsx';
 import { useState, useEffect, useMemo, useRef } from 'react';
 
 export default function Dashboard() {
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [items, setItems] = useState([]);
   const [filter, setFilter] = useState('all');
   const [subFilter, setSubFilter] = useState('');
   const [view, setView] = useState('inventory'); // 'inventory' o 'shopping'
   const [shoppingList, setShoppingList] = useState([]);
-
   const token = localStorage.getItem('token');
   const alertShown = useRef(false);
 
   // -----------------------
-  // Obtener items del backend
+  // Fetch items
   const fetchItems = async () => {
     if (!token) return;
     try {
       const res = await fetch('http://localhost:5000/api/items', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       setItems(data);
@@ -32,12 +31,12 @@ export default function Dashboard() {
     }
   };
 
-  // Obtener lista de compra
+  // Fetch shopping list
   const fetchShoppingList = async () => {
     if (!token) return;
     try {
       const res = await fetch('http://localhost:5000/api/shopping', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       setShoppingList(data);
@@ -47,68 +46,64 @@ export default function Dashboard() {
   };
 
   // -----------------------
-  // Efecto para cargar datos según vista
+  // Load data by view
   useEffect(() => {
     if (view === 'inventory') fetchItems();
-    else if (view === 'shopping') fetchShoppingList();
+    else fetchShoppingList();
   }, [view]);
 
   // -----------------------
-  // Eliminar item del inventario
+  // Delete item
   const handleDelete = async (id) => {
     if (!token) return;
     try {
       const res = await fetch(`http://localhost:5000/api/items/${id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error('Error al eliminar');
-      setItems(prev => prev.filter(item => item._id !== id));
-      setShoppingList(prev => prev.filter(item => item._id !== id));
+      setItems((prev) => prev.filter((item) => item._id !== id));
+      setShoppingList((prev) => prev.filter((item) => item._id !== id));
     } catch (err) {
       console.error(err);
     }
   };
 
-  // Actualizar cantidad inventario
+  // Update quantity
   const handleUpdateQuantity = async (id, newQuantity) => {
     if (!token) return;
     try {
       const res = await fetch(`http://localhost:5000/api/items/${id}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ quantity: newQuantity })
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ quantity: newQuantity }),
       });
-      if (!res.ok) throw new Error('Error actualizando la cantidad');
-      setItems(prev => prev.map(i => i._id === id ? { ...i, quantity: newQuantity } : i));
+      if (!res.ok) throw new Error('Error actualizando cantidad');
+      setItems((prev) =>
+        prev.map((i) => (i._id === id ? { ...i, quantity: newQuantity } : i))
+      );
     } catch (err) {
       console.error(err);
     }
   };
 
   // -----------------------
-  // Lista de compra
+  // Shopping list functions
   const handleAddToShoppingList = async (item) => {
     if (!token) return;
-
-    // Evitar duplicados por nombre
-    const existing = shoppingList.find(i => i.name === item.name);
+    const existing = shoppingList.find((i) => i.name === item.name);
     if (existing) {
       await handleUpdateShoppingQuantity(existing._id, existing.quantity + item.quantity);
       return;
     }
-
     try {
       const res = await fetch('http://localhost:5000/api/shopping', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ name: item.name, quantity: item.quantity, category: item.category })
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name: item.name, quantity: item.quantity, category: item.category }),
       });
       const newItem = await res.json();
-      setShoppingList(prev => [...prev, newItem]);
+      setShoppingList((prev) => [...prev, newItem]);
     } catch (err) {
       console.error(err);
     }
@@ -119,9 +114,9 @@ export default function Dashboard() {
     try {
       const res = await fetch(`http://localhost:5000/api/shopping/${id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) setShoppingList(prev => prev.filter(i => i._id !== id));
+      if (res.ok) setShoppingList((prev) => prev.filter((i) => i._id !== id));
     } catch (err) {
       console.error(err);
     }
@@ -132,78 +127,72 @@ export default function Dashboard() {
     try {
       const res = await fetch(`http://localhost:5000/api/shopping/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ quantity })
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ quantity }),
       });
       const updatedItem = await res.json();
-      setShoppingList(prev => prev.map(i => i._id === id ? updatedItem : i));
+      setShoppingList((prev) => prev.map((i) => (i._id === id ? updatedItem : i)));
     } catch (err) {
       console.error(err);
     }
   };
 
-  // Productos que caducan pronto
-
-useEffect(() => {
+  // -----------------------
+  // Alert: Expiring items (≤5 días) y no caducados
+  useEffect(() => {
     if (items.length === 0 || alertShown.current) return;
-
     const now = new Date();
     const limit = new Date();
     limit.setDate(now.getDate() + 5);
 
-    const expiringItems = items.filter(item => {
+    const expiringItems = items.filter((item) => {
       if (!item.expiryDate) return false;
+      if (item.category === 'Caducados') return false;
       const expiry = new Date(item.expiryDate);
       return expiry >= now && expiry <= limit;
     });
 
     if (expiringItems.length > 0) {
-      const mensaje = expiringItems.map(item => {
-        const dias = Math.ceil((new Date(item.expiryDate) - now) / (1000 * 60 * 60 * 24));
-        const nombreCapitalizado = item.name.charAt(0).toUpperCase() + item.name.slice(1);
-        return `${nombreCapitalizado} (caduca en ${dias} día${dias !== 1 ? 's' : ''})`;
-      }).join('\n');
-
+      const mensaje = expiringItems
+        .map((item) => {
+          const dias = Math.ceil((new Date(item.expiryDate) - now) / (1000 * 60 * 60 * 24));
+          const nombreCapitalizado = item.name.charAt(0).toUpperCase() + item.name.slice(1);
+          return `${nombreCapitalizado} (caduca en ${dias} día${dias !== 1 ? 's' : ''})`;
+        })
+        .join('\n');
       alert(`Productos a punto de caducar:\n\n${mensaje}`);
       alertShown.current = true;
     }
   }, [items]);
 
-
   // -----------------------
-  // Filtrado dinámico
+  // Filtered items
   const filtered = useMemo(() => {
+    const now = new Date();
+    const limitExpiring = new Date();
+    limitExpiring.setDate(now.getDate() + 30);
     let data = items;
 
     if (filter === 'expiring') {
-      const now = new Date();
-      const limit = new Date();
-      limit.setDate(now.getDate() + 30);
-      data = data.filter(i => i.expiryDate && new Date(i.expiryDate) <= limit);
+      data = data.filter((item) => {
+        if (!item.expiryDate) return false;
+        if (item.category === 'Caducados') return false;
+        const expiry = new Date(item.expiryDate);
+        return expiry >= now && expiry <= limitExpiring;
+      });
     }
 
-    if (filter === 'location' && subFilter) {
-      data = data.filter(i => i.location === subFilter);
-    }
-
-    if (filter === 'category' && subFilter) {
-      data = data.filter(i => i.category === subFilter);
-    }
-
-    if (filter === 'Caducados') {
-      data = data.filter(i => i.category === 'Caducados');
-    }
-
-    if (search.trim() !== '') {
-      data = data.filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
-    }
+    if (filter === 'location' && subFilter) data = data.filter((i) => i.location === subFilter);
+    if (filter === 'category' && subFilter) data = data.filter((i) => i.category === subFilter);
+    if (filter === 'Caducados') data = data.filter((i) => i.category === 'Caducados');
+    if (search.trim() !== '') data = data.filter((i) => i.name.toLowerCase().includes(search.toLowerCase()));
 
     return data;
   }, [items, filter, subFilter, search]);
 
-  // Obtener todas las ubicaciones y categorías únicas
-  const locations = useMemo(() => [...new Set(items.map(i => i.location).filter(Boolean))], [items]);
-  const categories = useMemo(() => [...new Set(items.map(i => i.category).filter(Boolean))], [items]);
+  // Unique locations & categories
+  const locations = useMemo(() => [...new Set(items.map((i) => i.location).filter(Boolean))], [items]);
+  const categories = useMemo(() => [...new Set(items.map((i) => i.category).filter(Boolean))], [items]);
 
   // -----------------------
   return (
@@ -223,40 +212,44 @@ useEffect(() => {
 
         {view === 'inventory' && (
           <>
-            <h1 className="text-xl font-semibold mb-2">
+            <h1 className='text-xl font-semibold mb-2'>
               {filter === 'all'
                 ? 'Todos los objetos'
                 : filter === 'location'
-                  ? `Ubicación: ${subFilter || 'Selecciona'}`
-                  : filter === 'category'
-                    ? `Categoría: ${subFilter || 'Selecciona'}`
-                    : filter === 'expiring'
-                      ? 'Caducan pronto'
-                      : filter === 'Caducados'
-                        ? 'Caducados'
-                        : ''
-              }
+                ? `Ubicación: ${subFilter || 'Selecciona'}`
+                : filter === 'category'
+                ? `Categoría: ${subFilter || 'Selecciona'}`
+                : filter === 'expiring'
+                ? 'Caducan pronto'
+                : filter === 'Caducados'
+                ? 'Caducados'
+                : ''}
             </h1>
 
             <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
-              {filtered.map(item => (
-                <ItemCard
-                  key={item._id}
-                  item={item}
-                  onDelete={handleDelete}
-                  onUpdateQuantity={handleUpdateQuantity}
-                  onAddToShoppingList={handleAddToShoppingList}
-                />
-              ))}
+              {filtered.map((item) => {
+                const now = new Date();
+                const expiry = item.expiryDate ? new Date(item.expiryDate) : null;
+                const isSoon = expiry && (expiry - now <= 5 * 24 * 60 * 60 * 1000);
+                return (
+                  <ItemCard
+                    key={item._id}
+                    item={{ ...item, isSoon }}
+                    onDelete={handleDelete}
+                    onUpdateQuantity={handleUpdateQuantity}
+                    onAddToShoppingList={handleAddToShoppingList}
+                  />
+                );
+              })}
             </div>
           </>
         )}
 
         {view === 'shopping' && (
           <>
-            <h1 className="text-xl font-semibold mb-2">Lista de compra</h1>
+            <h1 className='text-xl font-semibold mb-2'>Lista de compra</h1>
             <div className='flex flex-col gap-2'>
-              {shoppingList.map(item => (
+              {shoppingList.map((item) => (
                 <ShoppingItemCard
                   key={item._id}
                   item={item}
@@ -269,12 +262,7 @@ useEffect(() => {
         )}
       </div>
 
-      {showModal && (
-        <AddItemModal
-          onClose={() => setShowModal(false)}
-          onAddItem={() => fetchItems()}
-        />
-      )}
+      {showModal && <AddItemModal onClose={() => setShowModal(false)} onAddItem={fetchItems} />}
     </div>
   );
-};
+}
