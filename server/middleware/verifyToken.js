@@ -7,7 +7,7 @@ export default function verifyToken(req, res, next) {
 
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) return res.status(403).json({ error: 'Token inválido' });
-    req.userId = decoded.id; // <-- este ID se usará en Items
+    req.userId = decoded.uid;
     next();
   });
 }

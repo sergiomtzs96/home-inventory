@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Environment files
+.env
+server/.env
+functions/.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +27,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
+
+# Firebase credentials (use env vars in Vercel)
+api/firebase-config.json
+server/firebase-config.json
+
+# API key files
+api/*.key
+server/*.key

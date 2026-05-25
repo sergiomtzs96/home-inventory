@@ -1,12 +1,14 @@
 import express from 'express';
-import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
-import Item from '../models/Item.js';
+import { db, auth } from '../firebase.js';
 import verifyToken from '../middleware/verifyToken.js';
 
 const router = express.Router();
 
-// Registro
+const generateToken = (userId) => {
+  return jwt.sign({ uid: userId }, process.env.JWT_SECRET, { expiresIn: '1d' });
+};
+
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -14,43 +16,95 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Todos los campos son obligatorios' });
     }
 
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ error: 'El email ya está registrado' });
+    if (username.trim().length < 3) {
+      return res.status(400).json({ error: 'El usuario debe tener al menos 3 caracteres' });
+    }
 
-    const user = new User({ username, email, password });
-    await user.save();
-    res.status(201).json({ message: 'Usuario registrado correctamente' });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Correo electrónico no válido' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+    }
+
+    const usersRef = db.collection('users');
+    const snapshot = await usersRef.where('email', '==', email).get();
+    if (!snapshot.empty) {
+      return res.status(400).json({ error: 'El email ya está registrado' });
+    }
+
+    const userRecord = await auth.createUser({
+      email,
+      password,
+      displayName: username,
+    });
+
+    await usersRef.doc(userRecord.uid).set({
+      username,
+      email,
+      createdAt: new Date().toISOString(),
+    });
+
+    const token = generateToken(userRecord.uid);
+    res.status(201).json({ token, username });
   } catch (err) {
+    console.error('Error en registro:', err);
+    if (err.code === 'auth/email-already-in-use') {
+      return res.status(400).json({ error: 'El email ya está registrado' });
+    }
     res.status(500).json({ error: err.message });
   }
 });
 
-// Login
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ error: 'Email o contraseña incorrectos' });
 
-    const match = await user.comparePassword(password);
-    if (!match) return res.status(400).json({ error: 'Email o contraseña incorrectos' });
+    const usersRef = db.collection('users');
+    const snapshot = await usersRef.where('email', '==', email).get();
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
-    res.json({ token, username: user.username });
+    if (snapshot.empty) {
+      return res.status(400).json({ error: 'Email o contraseña incorrectos' });
+    }
+
+    const userDoc = snapshot.docs[0];
+    const userData = userDoc.data();
+
+    try {
+      const userRecord = await auth.getUserByEmail(email);
+      const token = generateToken(userRecord.uid);
+      res.json({ token, username: userData.username });
+    } catch (authError) {
+      return res.status(400).json({ error: 'Email o contraseña incorrectos' });
+    }
   } catch (err) {
+    console.error('Error en login:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Obtener categorías y ubicaciones del usuario
 router.get('/settings', verifyToken, async (req, res) => {
   try {
-    //Solo categorías y ubicaciones que tengan al menos un item
-    const categories = await Item.find({ user: req.userId }).distinct('category');
-    const locations = await Item.find({ user: req.userId }).distinct('location');
+    const userId = req.userId;
+    const itemsRef = db.collection('items');
+    const snapshot = await itemsRef.where('user', '==', userId).get();
 
-    res.json({ categories, locations });
-  }catch (err) {
+    const categories = new Set();
+    const locations = new Set();
+
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (data.category) categories.add(data.category);
+      if (data.location) locations.add(data.location);
+    });
+
+    res.json({
+      categories: Array.from(categories),
+      locations: Array.from(locations),
+    });
+  } catch (err) {
+    console.error('Error en settings:', err);
     res.status(500).json({ error: err.message });
   }
 });
