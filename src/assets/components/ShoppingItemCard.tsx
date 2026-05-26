@@ -73,7 +73,7 @@ export default function ShoppingItemCard({ item, onDelete, onUpdateQuantity }) {
       {/* Right: quantity + delete */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
         <label style={{ fontSize: '0.75rem', color: '#6b7280' }}>Cant.</label>
-        <button onClick={handleDecrement}> - </button>
+        <button onClick={handleDecrement} className='text-white font-semibold text-lg'> - </button>
         <input
           type="text"
           value={quantity}
@@ -94,7 +94,7 @@ export default function ShoppingItemCard({ item, onDelete, onUpdateQuantity }) {
           }}
           onFocus={(e) => { e.target.style.borderColor = 'rgba(255,255,255,0.25)'; }}
         />
-        <button onClick={handleIncrement}> + </button>
+        <button onClick={handleIncrement} className='text-white font-semibold text-lg'> + </button>
         <button
           onClick={() => onDelete(item.id)}
           title="Eliminar"
