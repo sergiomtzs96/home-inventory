@@ -1,14 +1,11 @@
 import express from 'express';
-import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-
-dotenv.config();
-
-if (!process.env.JWT_SECRET) {
-  console.warn('JWT_SECRET no configurado — el servidor se iniciará sin validación de tokens');
-}
+import authRoutes from './_lib/routes/auth.js';
+import itemRoutes from './_lib/routes/items.js';
+import shoppingRoutes from './_lib/routes/shopping.js';
+import ticketRoutes from './_lib/routes/ticket.js';
 
 const app = express();
 
@@ -29,11 +26,6 @@ app.use('/api/auth', rateLimit({
   legacyHeaders: false,
 }));
 
-import authRoutes from './routes/auth.js';
-import itemRoutes from './routes/items.js';
-import shoppingRoutes from './routes/shopping.js';
-import ticketRoutes from './routes/ticket.js';
-
 app.use('/api/auth', authRoutes);
 app.use('/api/items', itemRoutes);
 app.use('/api/shopping', shoppingRoutes);
@@ -42,6 +34,7 @@ app.use('/api/ticket', ticketRoutes);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Servidor funcionando con Firebase' });
 });
+
 
 if (!process.env.VERCEL) {
   const PORT = process.env.PORT || 5000;

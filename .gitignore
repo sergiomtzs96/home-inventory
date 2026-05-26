@@ -37,3 +37,4 @@ server/firebase-config.json
 # API key files
 api/*.key
 server/*.key
+.env*.local
