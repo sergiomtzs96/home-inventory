@@ -12,6 +12,8 @@ import toast from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
 
 export default function Dashboard() {
+  const [sidebarMode, setSidebarMode] = useState<'expanded' | 'collapsed' | 'hidden'>('expanded');
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [showTicketModal, setShowTicketModal] = useState(false);
@@ -27,6 +29,29 @@ export default function Dashboard() {
   const [newShoppingItemName, setNewShoppingItemName] = useState('');
   const [newShoppingItemQuantity, setNewShoppingItemQuantity] = useState(1);
   const [newShoppingItemCategory, setNewShoppingItemCategory] = useState('');
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
+      setIsMobile(e.matches);
+      setSidebarMode(e.matches ? 'hidden' : 'expanded');
+    };
+    handler(mq);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  const toggleSidebar = () => {
+    if (isMobile) {
+      setSidebarMode(prev => prev === 'hidden' ? 'expanded' : 'hidden');
+    } else {
+      setSidebarMode(prev => prev === 'expanded' ? 'collapsed' : 'expanded');
+    }
+  };
+
+  const toggleInnerMode = () => {
+    setSidebarMode(prev => prev === 'expanded' ? 'collapsed' : 'expanded');
+  };
 
   // -----------------------
   // Fetch items
@@ -251,6 +276,15 @@ export default function Dashboard() {
 
   return (
     <div style={{ display: 'flex', height: '100vh', backgroundColor: '#13151a', overflow: 'hidden' }}>
+      {isMobile && sidebarMode !== 'hidden' && (
+        <div
+          onClick={() => setSidebarMode('hidden')}
+          style={{
+            position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)',
+            zIndex: 99, transition: 'opacity 0.25s ease',
+          }}
+        />
+      )}
       <Sidebar
         items={items}
         onFilterChange={(f) => { setFilter(f); setSubFilter(''); }}
@@ -259,11 +293,14 @@ export default function Dashboard() {
         setSubFilter={setSubFilter}
         filter={filter}
         onViewChange={setView}
+        mode={sidebarMode}
+        isMobile={isMobile}
+        onToggleInner={toggleInnerMode}
       />
 
       {/* Main content */}
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '28px 32px', overflowY: 'auto' }}>
-        <Topbar search={search} setSearch={setSearch} onAdd={() => setShowModal(true)} onScan={() => setShowTicketModal(true)} />
+        <Topbar search={search} setSearch={setSearch} onAdd={() => setShowModal(true)} onScan={() => setShowTicketModal(true)} onToggleSidebar={toggleSidebar} sidebarMode={sidebarMode} isMobile={isMobile} />
 
         {/* ── Analytics view ── */}
         {view === 'analytics' && (

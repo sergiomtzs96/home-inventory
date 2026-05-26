@@ -1,7 +1,7 @@
-import { LogOut, Search, Plus, Camera } from 'lucide-react';
+import { LogOut, Search, Plus, Camera, Menu, X, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-export default function Topbar({ search, setSearch, onAdd, onScan }) {
+export default function Topbar({ search, setSearch, onAdd, onScan, onToggleSidebar, sidebarMode, isMobile }) {
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -19,14 +19,34 @@ export default function Topbar({ search, setSearch, onAdd, onScan }) {
         gap: '1rem',
       }}
     >
-      {/* Search input */}
-      <div
-        style={{
-          position: 'relative',
-          flex: 1,
-          maxWidth: '420px',
-        }}
-      >
+      {/* Toggle & Search */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, maxWidth: '420px' }}>
+        <button
+          onClick={onToggleSidebar}
+          title={isMobile ? (sidebarMode === 'hidden' ? 'Abrir menú' : 'Cerrar menú') : (sidebarMode === 'collapsed' ? 'Expandir sidebar' : 'Colapsar sidebar')}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: '40px', height: '40px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)',
+            backgroundColor: '#1e2028', color: '#9ca3af', cursor: 'pointer', flexShrink: 0,
+            transition: 'background-color 0.2s ease, color 0.2s ease, transform 0.15s ease',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#e5e7eb'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#1e2028'; e.currentTarget.style.color = '#9ca3af'; e.currentTarget.style.transform = 'translateY(0)'; }}
+        >
+          {isMobile ? (
+            sidebarMode === 'hidden' ? <Menu size={18} /> : <X size={18} />
+          ) : (
+            sidebarMode === 'collapsed' ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />
+          )}
+        </button>
+
+        {/* Search input */}
+        <div
+          style={{
+            position: 'relative',
+            flex: 1,
+          }}
+        >
         <Search
           size={16}
           style={{
@@ -66,6 +86,7 @@ export default function Topbar({ search, setSearch, onAdd, onScan }) {
             e.target.style.boxShadow = 'none';
           }}
         />
+      </div>
       </div>
 
       {/* Actions */}

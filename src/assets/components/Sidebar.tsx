@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { MapPin, Package, Grid3x3, ShieldAlert, BadgeX, ShoppingCart, ChevronDown, ChevronRight, BarChart2, ChefHat } from 'lucide-react';
+import { MapPin, Package, Grid3x3, ShieldAlert, BadgeX, ShoppingCart, ChevronDown, ChevronRight, ChevronLeft, BarChart2, ChefHat } from 'lucide-react';
 import logo from '../img/logowhite.png';
 
 export default function Sidebar({
@@ -10,7 +10,11 @@ export default function Sidebar({
   setSubFilter,
   filter,
   onViewChange,
+  mode = 'expanded',
+  isMobile = false,
+  onToggleInner,
 }) {
+  const isCollapsed = mode === 'collapsed';
   const [activeView, setActiveView] = useState('inventory');
   const [locationOpen, setLocationOpen] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(false);
@@ -44,10 +48,10 @@ export default function Sidebar({
   const navBtn = (isActive, colorOverride?) => ({
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: isCollapsed ? 'center' : 'space-between',
     gap: '10px',
     width: '100%',
-    padding: '9px 10px',
+    padding: isCollapsed ? '9px 0' : '9px 10px',
     borderRadius: '8px',
     border: 'none',
     cursor: 'pointer',
@@ -102,16 +106,23 @@ export default function Sidebar({
   return (
     <aside
       style={{
-        width: '240px',
-        minWidth: '240px',
+        width: isCollapsed ? '60px' : mode === 'hidden' ? '0px' : '240px',
+        minWidth: isCollapsed ? '60px' : mode === 'hidden' ? '0px' : '240px',
         height: '100vh',
         backgroundColor: '#13151a',
         display: 'flex',
         flexDirection: 'column',
-        borderRight: '1px solid rgba(255,255,255,0.06)',
+        borderRight: isCollapsed || mode === 'hidden' ? 'none' : '1px solid rgba(255,255,255,0.06)',
         padding: '0',
-        overflowY: 'auto',
+        overflowY: 'hidden',
         overflowX: 'hidden',
+        transition: 'width 0.25s ease, min-width 0.25s ease, border 0.25s ease',
+        ...(isMobile && mode !== 'hidden' ? {
+          position: 'fixed' as const,
+          left: 0,
+          top: 0,
+          zIndex: 100,
+        } : {}),
       }}
     >
       {/* ── Logo / Brand ── */}
@@ -119,25 +130,28 @@ export default function Sidebar({
         style={{
           display: 'flex',
           alignItems: 'center',
+          justifyContent: isCollapsed ? 'center' : 'flex-start',
           gap: '10px',
-          padding: '20px 16px 18px',
+          padding: isCollapsed ? '20px 0' : '20px 16px 18px',
           borderBottom: '1px solid rgba(255,255,255,0.06)',
         }}
       >
         <img src={logo} alt="logo" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
-        <div>
-          <p style={{ color: '#f9fafb', fontSize: '0.9rem', fontWeight: '600', lineHeight: 1.2, margin: 0 }}>
-            Home Inventory
-          </p>
-          <p style={{ color: '#4b5563', fontSize: '0.72rem', margin: 0, marginTop: '2px' }}>Mi inventario</p>
-        </div>
+        {!isCollapsed && (
+          <div>
+            <p style={{ color: '#f9fafb', fontSize: '0.9rem', fontWeight: '600', lineHeight: 1.2, margin: 0 }}>
+              Home Inventory
+            </p>
+            <p style={{ color: '#4b5563', fontSize: '0.72rem', margin: 0, marginTop: '2px' }}>Mi inventario</p>
+          </div>
+        )}
       </div>
 
       {/* ── Navigation ── */}
-      <nav style={{ flex: 1, padding: '16px 10px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+      <nav style={{ flex: 1, padding: isCollapsed ? '16px 0' : '16px 10px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
 
         {/* SECTION: Vistas */}
-        <p style={sectionLabel}>Vistas</p>
+        {!isCollapsed && <p style={sectionLabel}>Vistas</p>}
 
         {/* Inventario */}
         <button
@@ -148,9 +162,9 @@ export default function Sidebar({
         >
           <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Package size={16} strokeWidth={1.8} />
-            Todos los objetos
+            {!isCollapsed && 'Todos los objetos'}
           </span>
-          <span style={badge('rgba(255,255,255,0.08)', '#9ca3af')}>{allItemsCount}</span>
+          {!isCollapsed && <span style={badge('rgba(255,255,255,0.08)', '#9ca3af')}>{allItemsCount}</span>}
         </button>
 
         {/* Lista de compra */}
@@ -162,7 +176,7 @@ export default function Sidebar({
         >
           <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <ShoppingCart size={16} strokeWidth={1.8} />
-            Lista de compra
+            {!isCollapsed && 'Lista de compra'}
           </span>
         </button>
         {/* Analytics */}
@@ -174,7 +188,7 @@ export default function Sidebar({
         >
           <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <BarChart2 size={16} strokeWidth={1.8} />
-            Analíticas
+            {!isCollapsed && 'Analíticas'}
           </span>
         </button>
 
@@ -187,23 +201,21 @@ export default function Sidebar({
         >
           <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <ChefHat size={16} strokeWidth={1.8} />
-            Recetas
+            {!isCollapsed && 'Recetas'}
           </span>
         </button>
 
         {/* Divider */}
         <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.06)', margin: '10px 0' }} />
 
-
         {/* SECTION: Filtros */}
-        <p style={sectionLabel}>Filtros</p>
+        {!isCollapsed && <p style={sectionLabel}>Filtros</p>}
 
         {/* Por ubicación */}
         <div>
           <button
             onClick={() => {
-              setLocationOpen((p) => !p);
-              setCategoryOpen(false);
+              if (!isCollapsed) { setLocationOpen((p) => !p); setCategoryOpen(false); }
               onFilterChange('location');
               setSubFilter('');
               onViewChange('inventory');
@@ -215,14 +227,14 @@ export default function Sidebar({
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <MapPin size={16} strokeWidth={1.8} />
-              Por ubicación
+              {!isCollapsed && 'Por ubicación'}
             </span>
-            {locationOpen
+            {!isCollapsed && (locationOpen
               ? <ChevronDown size={14} style={{ color: '#6b7280' }} />
-              : <ChevronRight size={14} style={{ color: '#6b7280' }} />}
+              : <ChevronRight size={14} style={{ color: '#6b7280' }} />)}
           </button>
 
-          {locationOpen && locations.length > 0 && (
+          {!isCollapsed && locationOpen && locations.length > 0 && (
             <div style={{ marginTop: '2px' }}>
               {locations.map((loc) => (
                 <button
@@ -243,8 +255,7 @@ export default function Sidebar({
         <div>
           <button
             onClick={() => {
-              setCategoryOpen((p) => !p);
-              setLocationOpen(false);
+              if (!isCollapsed) { setCategoryOpen((p) => !p); setLocationOpen(false); }
               onFilterChange('category');
               setSubFilter('');
               onViewChange('inventory');
@@ -256,14 +267,14 @@ export default function Sidebar({
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Grid3x3 size={16} strokeWidth={1.8} />
-              Por categoría
+              {!isCollapsed && 'Por categoría'}
             </span>
-            {categoryOpen
+            {!isCollapsed && (categoryOpen
               ? <ChevronDown size={14} style={{ color: '#6b7280' }} />
-              : <ChevronRight size={14} style={{ color: '#6b7280' }} />}
+              : <ChevronRight size={14} style={{ color: '#6b7280' }} />)}
           </button>
 
-          {categoryOpen && categories.length > 0 && (
+          {!isCollapsed && categoryOpen && categories.length > 0 && (
             <div style={{ marginTop: '2px' }}>
               {categories
                 .filter((cat) => cat !== 'Caducados')
@@ -286,7 +297,7 @@ export default function Sidebar({
         <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.06)', margin: '10px 0' }} />
 
         {/* SECTION: Alertas */}
-        <p style={sectionLabel}>Alertas</p>
+        {!isCollapsed && <p style={sectionLabel}>Alertas</p>}
 
         {/* Caducan pronto */}
         <button
@@ -297,9 +308,9 @@ export default function Sidebar({
         >
           <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <ShieldAlert size={16} strokeWidth={1.8} />
-            Caducan pronto
+            {!isCollapsed && 'Caducan pronto'}
           </span>
-          {soonExpiringCount > 0 && (
+          {!isCollapsed && soonExpiringCount > 0 && (
             <span style={badge('rgba(248,113,113,0.15)', '#f87171')}>{soonExpiringCount}</span>
           )}
         </button>
@@ -313,9 +324,9 @@ export default function Sidebar({
         >
           <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <BadgeX size={16} strokeWidth={1.8} />
-            Caducados
+            {!isCollapsed && 'Caducados'}
           </span>
-          {expiredCount > 0 && (
+          {!isCollapsed && expiredCount > 0 && (
             <span style={badge('rgba(251,146,60,0.15)', '#fb923c')}>{expiredCount}</span>
           )}
         </button>
@@ -325,15 +336,36 @@ export default function Sidebar({
       {/* ── Footer ── */}
       <div
         style={{
-          padding: '14px 16px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
           borderTop: '1px solid rgba(255,255,255,0.06)',
-          fontSize: '0.7rem',
-          color: '#374151',
-          textAlign: 'center',
-          letterSpacing: '0.04em',
+          padding: isCollapsed ? '8px 0' : '8px 16px',
+          gap: '4px',
         }}
       >
-        © {new Date().getFullYear()} Home Inventory
+        {isMobile && (
+          <button
+            onClick={onToggleInner}
+            title={mode === 'expanded' ? 'Colapsar a iconos' : 'Expandir sidebar'}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: '32px', height: '32px', borderRadius: '8px',
+              border: '1px solid rgba(255,255,255,0.08)',
+              backgroundColor: 'transparent', color: '#6b7280', cursor: 'pointer',
+              transition: 'background-color 0.18s ease, color 0.18s ease',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#e5e7eb'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#6b7280'; }}
+          >
+            {mode === 'expanded' ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+          </button>
+        )}
+        {!isCollapsed && (
+          <span style={{ fontSize: '0.7rem', color: '#374151', letterSpacing: '0.04em' }}>
+            © {new Date().getFullYear()} Home Inventory
+          </span>
+        )}
       </div>
     </aside>
   );
