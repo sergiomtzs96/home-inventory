@@ -21,6 +21,20 @@ export default function ShoppingItemCard({ item, onDelete, onUpdateQuantity }) {
 
   const displayName = item.name.charAt(0).toUpperCase() + item.name.slice(1);
 
+
+  
+  const handleIncrement = () => {
+    const newQty = Number(quantity) + 1;
+    setQuantity(newQty);
+    onUpdateQuantity(item.id, newQty);
+  };
+
+  const handleDecrement = () => {
+    const newQty = Number(quantity) - 1;
+    setQuantity(newQty);
+    onUpdateQuantity(item.id, newQty);
+  };
+
   return (
     <div
       onMouseEnter={() => setHovered(true)}
@@ -59,6 +73,7 @@ export default function ShoppingItemCard({ item, onDelete, onUpdateQuantity }) {
       {/* Right: quantity + delete */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
         <label style={{ fontSize: '0.75rem', color: '#6b7280' }}>Cant.</label>
+        <button onClick={handleDecrement}> - </button>
         <input
           type="text"
           value={quantity}
@@ -79,6 +94,7 @@ export default function ShoppingItemCard({ item, onDelete, onUpdateQuantity }) {
           }}
           onFocus={(e) => { e.target.style.borderColor = 'rgba(255,255,255,0.25)'; }}
         />
+        <button onClick={handleIncrement}> + </button>
         <button
           onClick={() => onDelete(item.id)}
           title="Eliminar"
