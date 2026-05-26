@@ -26,8 +26,8 @@ Devuelve ÚNICAMENTE un JSON válido con este formato exacto, sin texto adiciona
   ]
 }
 Reglas:
-- "name": nombre legible en español (si está abreviado, intenta deducirlo).
-- "quantity": número entero de unidades compradas.
+- "name": nombre legible en español (si está abreviado, intenta deducirlo), solo elige lo que más lo identifique, si en el nombre pone x4 o pack 4, quiero que eso lo añadas a quantity.
+- "quantity": número entero de unidades compradas, puede contener ud, unidades, x2, x3..., también pueden ser gramos o kg, debes diferenciarlo.
 - "price": precio UNITARIO como decimal. Si aparece solo el total, divide entre quantity. Si no se detecta, pon 0.
 - "confidence": "high" si el nombre es claro, "medium" si hay duda, "low" si está muy abreviado.
 - "alternatives": array de posibles nombres alternativos (solo si confidence es "low" o "medium").
